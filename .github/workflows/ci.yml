@@ -10,57 +10,56 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
 
-    - name: Log in to Docker Hub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-
-    - name: Cache Docker layers
-      uses: actions/cache@v2
-      with:
-        path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-buildx-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-buildx-
-
-    - name: Build and push Docker image
-      id: docker_build
-      uses: docker/build-push-action@v2
-      with:
-        context: .
-        file: ./Dockerfile
-        tags: juansouza09/python-pipeline:latest
-        push: true
-        cache-from: type=local,src=/tmp/.buildx-cache
-        cache-to: type=local,dest=/tmp/.buildx-cache
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
   test:
     runs-on: ubuntu-latest
     needs: build
 
-    services:
-      docker:
-        image: juansouza09/python-pipeline:latest
-        options: --health-cmd "curl --fail http://localhost:5000/v1/resultados_nba || exit 1" --health-interval 10s --health-timeout 5s --health-retries 3
-        ports:
-          - 5000:5000
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          python -m pytest test_app.py
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Wait for Docker container to be healthy
-      run: |
-        sleep 30
-        curl --fail http://localhost:5000/v1/resultados_nba
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
 
-    - name: Run tests
-      run: |
-        pytest
+      - name: Build Docker image
+        run: |
+          docker build -t juansouza09/python-pipeline:latest .
+
+      - name: Run Docker container
+        run: |
+          docker run -d -p 5000:5000 juansouza09/python-pipeline:latest
