@@ -1,4 +1,4 @@
-FROM python:3.9-slim AS builder
+FROM python:3.9 AS builder
 
 WORKDIR /app
 
@@ -7,7 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-FROM python:3.9-slim
+FROM python:3.9
 WORKDIR /app
 COPY --from=builder /app /app
 EXPOSE 5000
