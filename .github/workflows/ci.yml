@@ -43,7 +43,7 @@ jobs:
 
       - name: Run tests
         run: |
-          python -m pytest test_app.py
+          python -m pytest test_api.py
 
   deploy:
     runs-on: ubuntu-latest
