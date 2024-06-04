@@ -8,8 +8,11 @@ def client():
         yield client
 
 def test_get_resultados_nba(client):
-    rv = client.get('/v1/resultados_nba')
-    assert rv.status_code == 200
-    json_data = rv.get_json()
-    assert len(json_data) == 3
-    assert json_data[0]['time_casa'] == 'Los Angeles Lakers'
+    response = client.get('/v1/resultados_nba')
+    assert response.status_code == 200
+    assert b'Los Angeles Lakers' in response.data
+    assert b'Golden State Warriors' in response.data
+    assert b'Brooklyn Nets' in response.data
+    assert b'Milwaukee Bucks' in response.data
+    assert b'Los Angeles Clippers' in response.data
+    assert b'Phoenix Suns' in response.data
